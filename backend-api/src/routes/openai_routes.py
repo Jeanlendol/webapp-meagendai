@@ -25,7 +25,7 @@ def generate_description():
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Você é um especialista em carreiras e profissões. Escreva descrições profissionais e informativas sobre diferentes profissões."},
+                {"role": "system", "content": "Você é um especialista em carreiras e profissões. Escreva descrições profissionais e informativas sobre diferentes profissões, sempre na 1º pessoa."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=300,
