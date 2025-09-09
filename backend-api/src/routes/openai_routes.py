@@ -1,23 +1,21 @@
 from flask import Blueprint, jsonify, request
-from flask_cors import cross_origin
 import openai
 import os
 
 openai_bp = Blueprint('openai', __name__)
 
 @openai_bp.route('/generate-description', methods=['POST', 'OPTIONS'])
-@cross_origin(origins='*', methods=['POST', 'OPTIONS'], allow_headers=['Content-Type', 'Authorization'])
 def generate_description():
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
-        response = jsonify({'status': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response
+        return '', 200
     
     try:
-        data = request.json
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Dados JSON são obrigatórios'}), 400
+            
         profession = data.get('profession')
         
         if not profession:
@@ -26,14 +24,19 @@ def generate_description():
         # Remover emojis da profissão se houver
         profession_clean = profession.split(' ', 1)[-1] if ' ' in profession else profession
         
-        # Configurar OpenAI (a chave já está nas variáveis de ambiente)
-        client = openai.OpenAI()
+        # Verificar se a chave da OpenAI está configurada
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            return jsonify({'error': 'Chave da OpenAI não configurada'}), 500
+        
+        # Configurar OpenAI
+        client = openai.OpenAI(api_key=api_key)
         
         # Prompt para gerar descrição da profissão
         prompt = f"Escreva uma descrição detalhada da profissão {profession_clean}, incluindo responsabilidades, áreas de atuação e características principais. A descrição deve ser profissional, informativa e ter entre 100-200 palavras."
         
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4o-mini",  # Modelo correto
             messages=[
                 {"role": "system", "content": "Você é um especialista em carreiras e profissões. Escreva descrições profissionais e informativas sobre diferentes profissões."},
                 {"role": "user", "content": prompt}
@@ -44,21 +47,18 @@ def generate_description():
         
         description = response.choices[0].message.content.strip()
         
-        result = jsonify({
+        return jsonify({
+            'success': True,
             'description': description,
             'profession': profession_clean
         })
         
-        # Add CORS headers to the response
-        result.headers.add('Access-Control-Allow-Origin', '*')
-        return result
-        
-    except openai.OpenAIError as e:
-        error_response = jsonify({'error': f'Erro na API OpenAI: {str(e)}'})
-        error_response.headers.add('Access-Control-Allow-Origin', '*')
-        return error_response, 500
+    except openai.APIError as e:
+        print(f"Erro OpenAI API: {str(e)}")
+        return jsonify({'error': f'Erro na API OpenAI: {str(e)}'}), 500
+    except openai.RateLimitError as e:
+        print(f"Limite de taxa OpenAI: {str(e)}")
+        return jsonify({'error': 'Limite de requisições excedido. Tente novamente mais tarde.'}), 429
     except Exception as e:
-        error_response = jsonify({'error': f'Erro interno: {str(e)}'})
-        error_response.headers.add('Access-Control-Allow-Origin', '*')
-        return error_response, 500
-
+        print(f"Erro interno: {str(e)}")
+        return jsonify({'error': f'Erro interno do servidor'}), 500
