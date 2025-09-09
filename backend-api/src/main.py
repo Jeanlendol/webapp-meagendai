@@ -13,14 +13,11 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Habilitar CORS para permitir requisições do frontend
-CORS(app, 
-    origins=[
-         "https://agendar.meagendai.com",
-         "http://localhost:3000"
-     ],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     allow_headers=['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-     supports_credentials=True)
+CORS(
+    app,
+    resources={r"/api/*": {"origins": ["https://agendar.meagendai.com", "http://localhost:3000"]}},
+    supports_credentials=True
+)
 
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(openai_bp, url_prefix='/api')
