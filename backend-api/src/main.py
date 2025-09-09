@@ -14,7 +14,10 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Habilitar CORS para permitir requisições do frontend
 CORS(app, 
-     origins=['*'], 
+    origins=[
+         "https://agendar.meagendai.com",
+         "http://localhost:3000"
+     ],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
      allow_headers=['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
      supports_credentials=True)
