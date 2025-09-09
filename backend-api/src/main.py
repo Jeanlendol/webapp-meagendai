@@ -1,6 +1,7 @@
+
 import os
 import sys
-# DON'T CHANGE THIS !!!
+# DON\'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory, jsonify
@@ -13,11 +14,22 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Habilitar CORS para permitir requisições do frontend
-CORS(
-    app,
-    resources={r"/api/*": {"origins": ["https://agendar.meagendai.com", "http://localhost:3000"]}},
-    supports_credentials=True
-)
+CORS(app, 
+    origins=[
+         "https://agendar.meagendai.com",
+         "http://localhost:3000"
+     ],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+     supports_credentials=True)
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "https://agendar.meagendai.com")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,Accept,Origin,X-Requested-With")
+    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
 
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(openai_bp, url_prefix='/api')
@@ -56,4 +68,6 @@ def serve(path):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
+
+
 
