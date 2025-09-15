@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory, jsonify
-from flask_cors import CORS
+
 from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.openai_routes import openai_bp
@@ -13,22 +13,11 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT')
 
 # Habilitar CORS para permitir requisições do frontend
-CORS(app, 
-    origins=[
-         "https://agendar.meagendai.com",
-         "http://localhost:3000"
-     ],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     allow_headers=['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-     supports_credentials=True)
 
-@app.after_request
-def add_cors_headers(response):
-    response.headers.add("Access-Control-Allow-Origin", "https://agendar.meagendai.com")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,Accept,Origin,X-Requested-With")
-    response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    return response
+
+
+
+
 
 
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -69,3 +58,23 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
 
+
+
+@app.before_request
+def handle_preflight():
+    if request.method == 'OPTIONS':
+        response = app.make_response()
+        response.headers.add("Access-Control-Allow-Origin", "https://agendar.meagendai.com")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,Accept,Origin,X-Requested-With")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
+
+@app.after_request
+def add_cors_headers(response):
+    if "Access-Control-Allow-Origin" not in response.headers:
+        response.headers.add("Access-Control-Allow-Origin", "https://agendar.meagendai.com")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization,Accept,Origin,X-Requested-With")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
